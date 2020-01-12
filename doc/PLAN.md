@@ -6,13 +6,14 @@
 I liked this variant because it kept to the simplicity and original style of the base game while adding in new power-ups and point drops. I also liked it because it seemed doable to be able to implement the features in this version. 
 
 ### General Level Descriptions
-1. Just four lines of normal bricks
-![level one](../resources/one.PNG =250x) 
-2.Some tough bricks as barriers to the normal ones
-![leveltwo](../resources/two.PNG =250x)
+-  Just four lines of normal bricks
 
+![level one](../resources/one.PNG)  
+- Some tough bricks as barriers to the normal ones
 
+![leveltwo](../resources/two.PNG)
 
+- 
 
 
 ### Bricks Ideas
@@ -32,5 +33,13 @@ I liked this variant because it kept to the simplicity and original style of the
 
 
 ### Cheat Key Ideas
+Game-play will be controlled using the arrow keys so other keys will be involved in cheat codes
+
+- x: extra life
+- b: extra ball
+- n: next level
+- l: instant laser power-up
+- (not sure on feasibility of multi-key cheats)  w-i-n instantly beats the game
+- $: extra points 
 
 ### Something Extra
