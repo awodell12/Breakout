@@ -7,9 +7,9 @@ I liked this variant because it kept to the simplicity and original style of the
 
 ### General Level Descriptions
 1. Just four lines of normal bricks
-<img src="../resources/one.png" alt="one" width="200"/>
-
+![level one](../resources/one.PNG =250x) 
 2.Some tough bricks as barriers to the normal ones
+![leveltwo](../resources/two.PNG =250x)
 
 
 
