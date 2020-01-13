@@ -7,7 +7,7 @@ I liked this variant because it kept to the simplicity and original style of the
 
 ### General Level Descriptions
 Code: 0-empty 1-normal 2-tough 3-indestructible 4-moving 
-1. ![level one](../resources/one.png)
+1. ![level one](../resources/one.PNG)
 2. ![level two](../resources/two.PNG)
 3. ![level 3](../resources/three.PNG)
 4. ![level 4](../resources/four.PNG)
