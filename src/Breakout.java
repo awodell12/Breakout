@@ -4,6 +4,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -30,15 +31,22 @@ public class Breakout extends Application{
     public static final String Ball_IMAGE= "ball.gif";
     public static final String PADDLE_IMAGE = "paddle.gif";
     public static final int PADDLE_SPEED = 20;
+    public static final int BRICK_COLUMNS = 13;
+    public static final int BRICK_ROWS = 20;
+    public static final int BRICK_WIDTH = SIZE/BRICK_COLUMNS;
+    public static final int BRICK_HEIGHT = SIZE/BRICK_ROWS;
+    private static final double TOLERANCE = 0.9;
 
-    private static int bouncerSpeedX = 100;
-    private static int bouncerSpeedY = -50;
+    private static int bouncerSpeedX = 200;
+    private static int bouncerSpeedY = -120;
     private static int lives = 3;
+    private static int myScore = 0;
 
     private Scene myScene;
     private ImageView myBouncer;
     private ImageView myPaddle;
     private Rectangle myRectangle;
+    private Brick myBrick;
 
     /**
      * Initialize what will be displayed and how it will be updated.
@@ -50,7 +58,7 @@ public class Breakout extends Application{
         stage.setTitle(TITLE);
         stage.show();
 
-        KeyFrame frame = new KeyFrame(Duration.millis(MILLISECOND_DELAY), e -> step(SECOND_DELAY));
+        KeyFrame frame = new KeyFrame(Duration.millis(MILLISECOND_DELAY), e -> step(SECOND_DELAY, myScene));
         Timeline animation = new Timeline();
         animation.setCycleCount(Timeline.INDEFINITE);
         animation.getKeyFrames().add(frame);
@@ -67,10 +75,8 @@ public class Breakout extends Application{
         Image paddleImage = new Image(this.getClass().getClassLoader().getResourceAsStream(PADDLE_IMAGE));
         myBouncer = new ImageView(image);
         myPaddle = new ImageView(paddleImage);
-        myRectangle = new Rectangle(0, 0, SIZE/13,SIZE/20);
-        myRectangle.setFill(Color.GRAY);
-        System.out.print(myRectangle.getWidth());
-        System.out.println(myRectangle.getHeight());
+        myBrick = new Brick(0, 0, SIZE/BRICK_COLUMNS,SIZE/BRICK_ROWS);
+        myBrick.setFill(Color.GRAY);
 
         // x and y represent the top left corner, so center it in window
         myBouncer.setX(width / 2 - myBouncer.getBoundsInLocal().getWidth() / 2);
@@ -85,7 +91,10 @@ public class Breakout extends Application{
 
         root.getChildren().add(myBouncer);
         root.getChildren().add(myPaddle);
-        root.getChildren().add(myRectangle);
+        //root.getChildren().add(myBrick);
+
+        root = addBricks(root);
+
 
         Scene scene = new Scene(root, width, height, background);
         // respond to input
@@ -94,7 +103,19 @@ public class Breakout extends Application{
         return scene;
     }
 
-    private void step(double elapsedTime) {
+    private Group addBricks(Group root) {
+        for (int j =0; j <= 5; j ++) {
+            for (int i = 1; i <= BRICK_COLUMNS; i++) {
+                myBrick = new Brick(i * BRICK_WIDTH, j * BRICK_HEIGHT, BRICK_WIDTH, BRICK_HEIGHT);
+                myBrick.setHealth(1);
+                myBrick.setFill(Color.GRAY);
+                root.getChildren().add(myBrick);
+            }
+        }
+        return root;
+    }
+
+    private void step(double elapsedTime, Scene myScene) {
         myBouncer.setX(myBouncer.getX() + bouncerSpeedX * elapsedTime);
         myBouncer.setY(myBouncer.getY() + bouncerSpeedY* elapsedTime);
         if (myBouncer.getX() >= (SIZE - myBouncer.getFitWidth())) bouncerSpeedX = -bouncerSpeedX;
@@ -119,7 +140,21 @@ public class Breakout extends Application{
            }
             bouncerSpeedY = -bouncerSpeedY;
             //}
-
+        }
+        for (Node other: myScene.getRoot().getChildrenUnmodifiable()) {
+            if (other instanceof Brick){
+                if (myBouncer.getBoundsInParent().intersects(other.getBoundsInParent()) && other.isVisible()){
+                    if (myBouncer.getY() + myBouncer.getFitHeight()<= ((Brick) other).getY() + ((Brick) other).getHeight()*(1-TOLERANCE)|| myBouncer.getY()>= ((Brick) other).getY() + ((Brick) other).getHeight() * TOLERANCE) {
+                        bouncerSpeedY = -bouncerSpeedY;
+                        //System.out.println("bouncer = " + myBouncer.getY() + "Brick = " + ((Brick) other).getY());
+                    } else bouncerSpeedX = -bouncerSpeedX;
+                    other.removeHealth();
+                    if (((Brick) other).getHealth()<=0)
+                    other.setVisible(false);
+                    myScore += 10;
+                    break;
+                }
+            }
         }
     }
 
@@ -143,6 +178,7 @@ public class Breakout extends Application{
     }
 
     private void handleMouseInput(double x, double y) {
+        System.out.print(myScore);
     }
 
     /**
