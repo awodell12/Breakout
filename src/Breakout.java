@@ -34,30 +34,32 @@ public class Breakout extends Application{
     public static final int PADDLE_SPEED = 20;
     public static final int BRICK_COLUMNS = 13;
     public static final int BRICK_ROWS = 20;
-    public static final int BRICK_WIDTH = SIZE/BRICK_COLUMNS;
-    public static final int BRICK_HEIGHT = SIZE/BRICK_ROWS;
+    public static final double BRICK_WIDTH = (1.0) * SIZE/ ((1.0)*BRICK_COLUMNS);
+    public static final double BRICK_HEIGHT = (1.0) * SIZE/((1.0)*BRICK_ROWS);
+    public static final double BALL_SPEED = SIZE/2 ;
+
     private static final double TOLERANCE = 0.9;
-    private static final double BALL_SPEED = SIZE/4 ;
     private static final double SMALL_ANGLE = 20 * Math.PI / 180;
     private static final double BIGGER_ANGLE = 30 * Math.PI / 180;
     private static final double SMALL_ANGLE_X = Math.cos(SMALL_ANGLE) * BALL_SPEED;
     private static final double SMALL_ANGLE_Y = Math.sin(SMALL_ANGLE) *BALL_SPEED;
     private static final double BIGGER_ANGLE_X = Math.cos(BIGGER_ANGLE) *BALL_SPEED;
     private static final double BIGGER_ANGLE_Y = Math.sin(BIGGER_ANGLE) * BALL_SPEED;
+    private static final double POWER_UP_CHANCE = 0.25;
     
 
     private static double bouncerSpeedX = 0;
     private static double bouncerSpeedY = 0;
-    private static int lives = 1;
+    private static int myLives = 1;
     private static int myScore = 0;
     private static boolean started = false;
 
     private Scene myScene;
     private ImageView myBouncer;
     private ImageView myPaddle;
-    private Rectangle myRectangle;
     private Brick myBrick;
     private Group root;
+    private PowerUp myPowerUp;
 
     /**
      * Initialize what will be displayed and how it will be updated.
@@ -119,7 +121,7 @@ public class Breakout extends Application{
 
     private Group addBricks(Group root) {
         for (int j =0; j <= 5; j ++) {
-            for (int i = 1; i <= BRICK_COLUMNS; i++) {
+            for (int i = 0; i <= BRICK_COLUMNS; i++) {
                 myBrick = new Brick(i * BRICK_WIDTH, j * BRICK_HEIGHT, BRICK_WIDTH, BRICK_HEIGHT);
                 myBrick.setHealth(1);
                 myBrick.setFill(Color.GRAY);
@@ -130,17 +132,85 @@ public class Breakout extends Application{
     }
 
     private void step(double elapsedTime, Scene myScene) {
+        updateBouncer(elapsedTime);
+        updatePowerUps(elapsedTime);
+
+        if (myPaddle.getBoundsInParent().intersects(myBouncer.getBoundsInParent())) ballHitsPaddle();
+
+        checkCollisions(myScene);
+        checkNewPowerUp(myScene);
+
+    }
+
+    public int checkNewPowerUp(Scene myScene) {
+        int powerType = 0;
+        for (Node other :myScene.getRoot().getChildrenUnmodifiable()){
+            if(other instanceof PowerUp){
+                if(myPaddle.getBoundsInParent().intersects(other.getBoundsInParent()) && other.isVisible()) {
+                    powerType = ((PowerUp) other).getPowerType();
+                    switch (powerType){
+                        case 1:
+                            addLife();
+                            break;
+                        case 2:
+                            slowBall();
+                            break;
+                        case 3:
+                            growPaddle();
+                            break;
+                        case 4:
+                            System.out.println("Power-Up 4");
+                            break;
+
+                        case 5:
+                            System.out.println("Power-Up 5");
+                            break;
+                    }
+                    other.setVisible(false);
+                    break;
+                }
+            }
+        }
+        return powerType;
+    }
+
+    private void growPaddle() {
+        myPaddle.setFitWidth(myPaddle.getFitWidth()*2);
+    }
+
+    private void slowBall() {
+        bouncerSpeedX = 0.5 * bouncerSpeedX;
+        bouncerSpeedY = 0.5 * bouncerSpeedY;
+    }
+
+    private void addLife() {
+        myLives++;
+    }
+
+    private void updatePowerUps(double elapsedTime) {
+        for (Node node: root.getChildrenUnmodifiable()) {
+            if (node instanceof PowerUp) {
+                double newY = (node.getLayoutY() + ((PowerUp) node).getVelocity() * elapsedTime);
+                node.setLayoutY(newY);
+                if (node.getLayoutY() >= SIZE) {
+                    node.setVisible(false);
+                }
+            }
+            }
+        }
+
+    private void updateBouncer(double elapsedTime) {
         myBouncer.setX(myBouncer.getX() + bouncerSpeedX * elapsedTime);
         myBouncer.setY(myBouncer.getY() + bouncerSpeedY* elapsedTime);
-        if (myBouncer.getX() >= (SIZE - myBouncer.getFitWidth())) bouncerSpeedX = -bouncerSpeedX;
+        if (myBouncer.getX() >= (SIZE - TOLERANCE*myBouncer.getFitWidth())) bouncerSpeedX = -bouncerSpeedX;
         if (myBouncer.getX() <= 0) bouncerSpeedX = -bouncerSpeedX;
         if (myBouncer.getY() <= 0) bouncerSpeedY = - bouncerSpeedY;
         if(myBouncer.getY() > SIZE) {
             death();
         }
+    }
 
-        if (myPaddle.getBoundsInParent().intersects(myBouncer.getBoundsInParent())) ballHitsPaddle();
-
+    private void checkCollisions(Scene myScene) {
         for (Node other: myScene.getRoot().getChildrenUnmodifiable()) {
             if (other instanceof Brick){
                 if (myBouncer.getBoundsInParent().intersects(other.getBoundsInParent()) && other.isVisible()){
@@ -149,8 +219,14 @@ public class Breakout extends Application{
                         //System.out.println("bouncer = " + myBouncer.getY() + "Brick = " + ((Brick) other).getY());
                     } else bouncerSpeedX = -bouncerSpeedX;
                     ((Brick) other).removeHealth();
-                    if (((Brick) other).getHealth()<=0)
-                    other.setVisible(false);
+                    if (((Brick) other).getHealth()<=0) {
+                        other.setVisible(false);
+
+                        if(Math.random()<POWER_UP_CHANCE) {
+                            myPowerUp = new PowerUp(((Brick) other).getX() + BRICK_WIDTH / 2, ((Brick) other).getY());
+                            root.getChildren().add(myPowerUp);
+                        }
+                    }
                     myScore += 10;
                     break;
                 }
@@ -185,14 +261,13 @@ public class Breakout extends Application{
     }
 
     private void death() {
-        lives --;
+        myLives--;
         started = false;
-        if (lives <= 0)
+        if (myLives <= 0)
             endGame();
     }
 
     private void endGame() {
-        //Figure out how to end the game and display the score.
         root.getChildren().clear();
         Text endText = new Text(0, SIZE/4,"Game Over");
         endText.setFill(Color.RED);
