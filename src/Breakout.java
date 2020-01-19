@@ -17,6 +17,9 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 /**
  *  JavaFX Breakout game developed for CS 308. Based on ExampleBounce code from Prof. Duvall
  * @author Austin Odell
@@ -36,7 +39,7 @@ public class Breakout extends Application{
     public static final int BRICK_ROWS = 20;
     public static final double BRICK_WIDTH = (1.0) * SIZE/ ((1.0)*BRICK_COLUMNS);
     public static final double BRICK_HEIGHT = (1.0) * SIZE/((1.0)*BRICK_ROWS);
-    public static final double BALL_SPEED = SIZE/2 ;
+    public static final double BALL_SPEED = (1.0) * SIZE/2 ;
 
     private static final double TOLERANCE = 0.9;
     private static final double SMALL_ANGLE = 20 * Math.PI / 180;
@@ -46,28 +49,33 @@ public class Breakout extends Application{
     private static final double BIGGER_ANGLE_X = Math.cos(BIGGER_ANGLE) *BALL_SPEED;
     private static final double BIGGER_ANGLE_Y = Math.sin(BIGGER_ANGLE) * BALL_SPEED;
     private static final double POWER_UP_CHANCE = 0.25;
-    
+    private static final long POWER_UP_DURATION = 15;
+
 
     private static double bouncerSpeedX = 0;
     private static double bouncerSpeedY = 0;
     private static int myLives = 1;
     private static int myScore = 0;
     private static boolean started = false;
+    private static int currentPower = 0;
 
     private Scene myScene;
     private ImageView myBouncer;
     private ImageView myPaddle;
     private Brick myBrick;
     private Group root;
-    private PowerUp myPowerUp;
 
     /**
      * Initialize what will be displayed and how it will be updated.
      */
     @Override
     public void start (Stage stage) {
-        myScene = setupGame(SIZE, SIZE, BACKGROUND);
-        stage.setScene(myScene);
+        myScene = setupLevel(SIZE, SIZE, BACKGROUND);
+        Group titleRoot;
+        titleRoot = showStartScreen();
+        Scene titleScene = new Scene(titleRoot, SIZE, SIZE);
+        titleScene.setOnMouseClicked(e -> stage.setScene(myScene));
+        stage.setScene(titleScene);
         stage.setTitle(TITLE);
         stage.show();
 
@@ -78,9 +86,16 @@ public class Breakout extends Application{
         animation.play();
     }
 
+    private Group showStartScreen() {
+        Group startScreen = new Group();
+        Text startText = new Text(0, SIZE/4,"Start Game");
+        startScreen.getChildren().add(startText);
+
+        return startScreen;
+    }
 
 
-    private Scene setupGame (int width, int height, Paint background) {
+    private Scene setupLevel(int width, int height, Paint background) {
         // create one top level collection to organize the things in the scene
         root = new Group();
         // make some shapes and set their properties
@@ -131,14 +146,17 @@ public class Breakout extends Application{
         return root;
     }
 
-    private void step(double elapsedTime, Scene myScene) {
-        updateBouncer(elapsedTime);
-        updatePowerUps(elapsedTime);
+    private void step(double elapsedTime, Scene curScene) {
+        if (myScene == curScene) {
+            updateBouncer(elapsedTime);
+            updatePowerUps(elapsedTime);
 
-        if (myPaddle.getBoundsInParent().intersects(myBouncer.getBoundsInParent())) ballHitsPaddle();
+            if (myPaddle.getBoundsInParent().intersects(myBouncer.getBoundsInParent())) ballHitsPaddle();
 
-        checkCollisions(myScene);
-        checkNewPowerUp(myScene);
+            checkCollisions(curScene);
+            if (currentPower == 0)
+                currentPower = checkNewPowerUp(curScene);
+        }
 
     }
 
@@ -167,10 +185,14 @@ public class Breakout extends Application{
                             break;
                     }
                     other.setVisible(false);
+                    Timer timer = new Timer();
+                    TimerTask task = new removePowerUp(powerType);
+                    timer.schedule(task, POWER_UP_DURATION * 1000 );
                     break;
                 }
             }
         }
+
         return powerType;
     }
 
@@ -223,7 +245,7 @@ public class Breakout extends Application{
                         other.setVisible(false);
 
                         if(Math.random()<POWER_UP_CHANCE) {
-                            myPowerUp = new PowerUp(((Brick) other).getX() + BRICK_WIDTH / 2, ((Brick) other).getY());
+                            PowerUp myPowerUp = new PowerUp(((Brick) other).getX() + BRICK_WIDTH / 2, ((Brick) other).getY());
                             root.getChildren().add(myPowerUp);
                         }
                     }
@@ -316,6 +338,41 @@ public class Breakout extends Application{
      */
     public static void main (String[] args) {
         launch(args);
+    }
+
+    private class removePowerUp extends TimerTask {
+        int myPower; 
+        public removePowerUp(int powerType) {
+            myPower = powerType;
+        }
+
+        @Override
+        public void run() {
+            switch (myPower){
+                case 1: 
+                    break;
+                case 2:
+                    endSlowBall();
+                    break;
+                case 3:
+                    endGrowPaddle();
+                default:
+                    currentPower = 0;
+                    break;
+
+            }
+        }
+    }
+
+    private void endGrowPaddle() {
+        myPaddle.setFitWidth(myPaddle.getFitWidth()*0.5);
+        currentPower = 0;
+    }
+
+    private void endSlowBall() {
+        bouncerSpeedX = 2.0 * bouncerSpeedX;
+        bouncerSpeedY = 2.0 * bouncerSpeedY;
+        currentPower = 0;
     }
 }
 
