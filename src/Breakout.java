@@ -14,6 +14,7 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -88,8 +89,24 @@ public class Breakout extends Application{
 
     private Group showStartScreen() {
         Group startScreen = new Group();
-        Text startText = new Text(0, SIZE/4,"Start Game");
+        Text startText = new Text(0, SIZE/5,"Breakout");
+        startText.setFont(new Font(SIZE/10));
+        alignCenter(startText);
         startScreen.getChildren().add(startText);
+
+        Text pressToStart = new Text(0, SIZE/4, "(Click anywhere to start)");
+        pressToStart.setFont(new Font(12));
+        alignCenter(pressToStart);
+        startScreen.getChildren().add(pressToStart);
+
+        Text rules = new Text(0, SIZE/3, "Rules: \n1. Use Left and Right arrow keys to move paddle. \n" +
+                "2. Use Up arrow key to fire lasers \n3. Click to launch ball off paddle \n4. If ball falls below paddle you lose a life, if you run out of lives the game ends\n" +
+                "5. Collect falling power-ups with the paddle");
+        rules.setFont(new Font(SIZE/20));
+        rules.setWrappingWidth(TOLERANCE * SIZE);
+        rules.setTextAlignment(TextAlignment.LEFT);
+        alignCenter(rules);
+        startScreen.getChildren().add(rules);
 
         return startScreen;
     }
