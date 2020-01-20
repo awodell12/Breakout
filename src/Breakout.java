@@ -3,12 +3,16 @@
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
@@ -17,7 +21,6 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.sql.SQLOutput;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -54,11 +57,12 @@ public class Breakout extends Application{
     private static final int SCORE_PER_BRICK = 10;
     private static final int MAX_LEVEL = 5;
     private static final int TOUGH_HEALTH = 5;
+    private static final int BOTTOM_DISPLAY_SIZE = 50 ;
 
 
     private static double bouncerSpeedX = 0;
     private static double bouncerSpeedY = 0;
-    private static int myLives = 1;
+    private static int myLives = 3;
     private static int myScore = 0;
     private static boolean started = false;
     private static int currentPower = 0;
@@ -72,6 +76,8 @@ public class Breakout extends Application{
     private Brick myBrick;
     private Group root;
     private Stage myStage;
+    private Label myScoreDisplay;
+    private Label myLivesDisplay;
 
     /**
      * Initialize what will be displayed and how it will be updated.
@@ -149,14 +155,35 @@ public class Breakout extends Application{
         //root.getChildren().add(myBrick);
 
         root = addBricks(root,levelNum);
+        root.getChildren().add(setUpDisplay());
 
 
-        Scene scene = new Scene(root, Breakout.SIZE, Breakout.SIZE, background);
+        Scene scene = new Scene(root, Breakout.SIZE , Breakout.SIZE + BOTTOM_DISPLAY_SIZE, background);
         // respond to input
 
         scene.setOnKeyPressed(e -> handleKeyInput(e.getCode()));
         scene.setOnMouseClicked(e -> handleMouseInput(e.getX(), e.getY()));
         return scene;
+    }
+
+    private VBox setUpDisplay() {
+        VBox vbox = new VBox();
+        vbox.setLayoutY(SIZE);
+        vbox.setMinSize(SIZE, BOTTOM_DISPLAY_SIZE);
+        vbox.setSpacing(5);
+        vbox.setPadding(new Insets(5));
+        vbox.setBackground(new Background(new BackgroundFill(Color.GREENYELLOW,
+                CornerRadii.EMPTY, Insets.EMPTY)));
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setStyle("-fx-border-color: black");
+
+        myScoreDisplay = new Label("Score: " + myScore);
+        myLivesDisplay = new Label("Lives: " +myLives);
+        myLivesDisplay.setTextFill(Color.BLUE);
+        myScoreDisplay.setTextFill(Color.BLUE);
+        vbox.getChildren().add(myScoreDisplay);
+        vbox.getChildren().add(myLivesDisplay);
+    return vbox;
     }
 
     private Group addBricks(Group root, int level) {
@@ -180,7 +207,7 @@ public class Breakout extends Application{
                     }
                     else {
                         myBrick.setFill(Color.BLACK);
-                        myBrick.setHealth(Integer.MAX_VALUE);
+                        myBrick.setHealth(Integer.MAX_VALUE - 100);
                     }
 
                     root.getChildren().add(myBrick);
@@ -284,6 +311,7 @@ public class Breakout extends Application{
 
     private void addLife() {
         myLives++;
+        myLivesDisplay.setText("Lives: " + myLives);
     }
 
     private void updatePowerUps(double elapsedTime) {
@@ -291,7 +319,7 @@ public class Breakout extends Application{
             if (node instanceof PowerUp) {
                 double newY = (node.getLayoutY() + ((PowerUp) node).getVelocity() * elapsedTime);
                 node.setLayoutY(newY);
-                if (node.getLayoutY() >= SIZE) {
+                if (node.getLayoutY() >= SIZE + BOTTOM_DISPLAY_SIZE) {
                     node.setVisible(false);
                 }
             }
@@ -313,21 +341,33 @@ public class Breakout extends Application{
         for (Node other: myScene.getRoot().getChildrenUnmodifiable()) {
             if (other instanceof Brick){
                 if (myBouncer.getBoundsInParent().intersects(other.getBoundsInParent()) && other.isVisible()){
-                    if (myBouncer.getY() + myBouncer.getFitHeight()<= ((Brick) other).getY() + ((Brick) other).getHeight()*(1-TOLERANCE)|| myBouncer.getY()>= ((Brick) other).getY() + ((Brick) other).getHeight() * TOLERANCE) {
-                        bouncerSpeedY = -bouncerSpeedY;
-                        //System.out.println("bouncer = " + myBouncer.getY() + "Brick = " + ((Brick) other).getY());
-                    } else bouncerSpeedX = -bouncerSpeedX;
-                    ((Brick) other).removeHealth();
-                    if (((Brick) other).getHealth()<=0) {
-                        other.setVisible(false);
+                    {
+                        if (myBouncer.getY() + myBouncer.getFitHeight() <= ((Brick) other).getY() + ((Brick) other).getHeight() * (1 - TOLERANCE) || myBouncer.getY() >= ((Brick) other).getY() + ((Brick) other).getHeight() * TOLERANCE) {
+                            bouncerSpeedY = -bouncerSpeedY;
+                            //System.out.println("bouncer = " + myBouncer.getY() + "Brick = " + ((Brick) other).getY());
+                        } else bouncerSpeedX = -bouncerSpeedX;
+                        ((Brick) other).removeHealth();
+                        if (((Brick) other).getHealth() <= 0) {
+                            other.setVisible(false);
 
-                        if(Math.random()<POWER_UP_CHANCE) {
-                            PowerUp myPowerUp = new PowerUp(((Brick) other).getX() + BRICK_WIDTH / 2, ((Brick) other).getY());
-                            root.getChildren().add(myPowerUp);
+                            if (Math.random() < POWER_UP_CHANCE) {
+                                PowerUp myPowerUp = new PowerUp(((Brick) other).getX() + BRICK_WIDTH / 2, ((Brick) other).getY());
+                                root.getChildren().add(myPowerUp);
+                            }
                         }
                     }
-                    if (((Brick) other).getHealth()<100)
-                    myScore += SCORE_PER_BRICK;
+                    // if hitting a solid brick this helps eliminate a bug where ball would get stuck inside one
+                    if (myBouncer.getX() > ((Brick) other).getX() && myBouncer.getX() < ((Brick) other).getX() + ((Brick) other).getWidth()*TOLERANCE){
+                        if (myBouncer.getY() > ((Brick) other).getY() && myBouncer.getY() < ((Brick) other).getY() + ((Brick) other).getHeight()*TOLERANCE) {
+                            myBouncer.setX(myBouncer.getX() + BRICK_WIDTH / 2);
+                            myBouncer.setY(myBouncer.getY() + BRICK_HEIGHT / 2);
+                        }}
+
+
+                    if (((Brick) other).myHealth <100){
+                        myScore += SCORE_PER_BRICK;
+                        myScoreDisplay.setText("Score: " + myScore);
+                    }
                     break;
                 }
             }
@@ -362,6 +402,7 @@ public class Breakout extends Application{
 
     private void death() {
         myLives--;
+        myLivesDisplay.setText("Lives: " + myLives);
         started = false;
         if (myLives <= 0) {
             if (currentLevel == MAX_LEVEL)
@@ -369,6 +410,7 @@ public class Breakout extends Application{
             else
             endGame(false);
         }
+        else resetToStartPosition();
     }
 
     private void endGame(boolean hasWon) {
@@ -411,12 +453,13 @@ public class Breakout extends Application{
         if(codeChar > '5' && codeChar < ':')
             skipToLevel(MAX_LEVEL);
         
-        if (code == KeyCode.L)
-            myLives ++; 
+        if (code == KeyCode.L) {
+            addLife();
+        }
         if (code == KeyCode.R)
             resetToStartPosition();
         if (code == KeyCode.DOLLAR)
-            myScore += 100; 
+            myScore += 100;
     }
 
     private void resetToStartPosition() {
@@ -441,7 +484,7 @@ public class Breakout extends Application{
     }
 
     private void handleMouseInput(double x, double y) {
-        if (true ) { //!started ****
+        if (!started) { //!started ****
             double dy = y - myBouncer.getY();
             double dx = x - myBouncer.getX();
             double hyp = Math.sqrt(dx * dx + dy * dy);
