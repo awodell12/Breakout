@@ -9,7 +9,7 @@ public class PowerUp extends Circle {
 
     public PowerUp(double centerX, double centerY){
         super(centerX, centerY, RADIUS);
-        powerType = 3;// (int) Math.floor(Math.random()* (NUM_POWERS)) + 1;
+        powerType =  (int) Math.floor(Math.random()* (NUM_POWERS)) + 1;
     };
 
     public int getPowerType(){
