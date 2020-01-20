@@ -60,7 +60,7 @@ public class Breakout extends Application{
     private static final double SMALL_ANGLE_Y = Math.sin(SMALL_ANGLE) *BALL_SPEED;
     private static final double BIGGER_ANGLE_X = Math.cos(BIGGER_ANGLE) *BALL_SPEED;
     private static final double BIGGER_ANGLE_Y = Math.sin(BIGGER_ANGLE) * BALL_SPEED;
-    private static final double POWER_UP_CHANCE = 0.25;
+    private static final double POWER_UP_CHANCE = 0.1;
     private static final long POWER_UP_DURATION = 15;
     private static final int SCORE_PER_BRICK = 10;
     private static final int MAX_LEVEL = 5;
