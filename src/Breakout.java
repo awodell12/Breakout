@@ -27,6 +27,14 @@ import java.util.TimerTask;
 /**
  *  JavaFX Breakout game developed for CS 308. Based on ExampleBounce code from Prof. Duvall
  * @author Austin Odell
+ * This class is the top-level class for a Breakout game by extending the Application class of JavaFX Platform
+ * To use this class all you need is the resources for the ball and paddle images as well as the text files for the block intializations
+ * From there all that needs to be done is running the main method and it should work with no arguments
+ * This class depends on three other classes for its functionality
+ * 1. PowerUp: this class is used to create power-up drop objects. They are updated in the step method of the Breakout class
+ * 2. InputHandler: This class provides the ability to read data in from a text file. This is used to create a 2D array to correspond
+ * to the Block types that are initialized for each level
+ * 3. Brick: This class is used to create brick objects which are rectangles with a health.
  */
 public class Breakout extends Application{
     public static final String TITLE = "Example JavaFX";
@@ -80,7 +88,9 @@ public class Breakout extends Application{
     private Label myLivesDisplay;
 
     /**
-     * Initialize what will be displayed and how it will be updated.
+     * The start method is invoked by the Application launch sequence and sets up and displays the title scene as well as creating the first level.
+     * It also shows the stage for the scenes and enables the game to have a sequence of frames/animations.
+     * It invokes the step method to proceed through the gameplay.
      */
     @Override
     public void start (Stage stage) {
@@ -115,7 +125,7 @@ public class Breakout extends Application{
 
         Text rules = new Text(0, SIZE/3, "Rules: \n1. Use Left and Right arrow keys to move paddle. \n" +
                 "2. Use Up arrow key to fire lasers \n3. Click to launch ball off paddle \n4. If ball falls below paddle you lose a life, if you run out of lives the game ends\n" +
-                "5. Collect falling power-ups with the paddle");
+                "5. Collect falling power-ups with the paddle \n6. 1000 bonus points per left over life at end of game");
         rules.setFont(new Font(SIZE/20));
         rules.setWrappingWidth(TOLERANCE * SIZE);
         rules.setTextAlignment(TextAlignment.LEFT);
@@ -248,7 +258,7 @@ public class Breakout extends Application{
 
     private void nextLevel() {
         currentLevel++;
-        if (currentLevel < MAX_LEVEL){
+        if (currentLevel <= MAX_LEVEL){
             myScene = setupLevel(BACKGROUND, currentLevel);
             myStage.setScene(myScene);
             started = false;
@@ -281,11 +291,11 @@ public class Breakout extends Application{
                             growPaddle();
                             break;
                         case 4:
-                            System.out.println("Power-Up 4");
+                            System.out.println("Power-Up 4"); // Could add 4th power-up here
                             break;
 
                         case 5:
-                            System.out.println("Power-Up 5");
+                            System.out.println("Power-Up 5"); //could add 5th power-up here
                             break;
                     }
                     other.setVisible(false);
@@ -404,9 +414,11 @@ public class Breakout extends Application{
         myLives--;
         myLivesDisplay.setText("Lives: " + myLives);
         started = false;
-        if (myLives <= 0) {
-            if (currentLevel == MAX_LEVEL)
+        if (myLives <= 0 || currentLevel ==MAX_LEVEL) {
+            if (currentLevel == MAX_LEVEL) {
+                myScore += 1000 * myLives;
                 endGame(true);
+            }
             else
             endGame(false);
         }
@@ -458,8 +470,10 @@ public class Breakout extends Application{
         }
         if (code == KeyCode.R)
             resetToStartPosition();
-        if (code == KeyCode.DOLLAR)
+        if (code == KeyCode.P) {
             myScore += 100;
+            myScoreDisplay.setText("Score: " + myScore);
+        }
     }
 
     private void resetToStartPosition() {
