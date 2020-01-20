@@ -11,7 +11,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
@@ -28,7 +27,7 @@ import java.util.TimerTask;
 public class Breakout extends Application{
     public static final String TITLE = "Example JavaFX";
     public static final int SIZE = 400;
-    public static final int FRAMES_PER_SECOND = 60;
+    public static final int FRAMES_PER_SECOND = 120;
     public static final int MILLISECOND_DELAY = 1000 / FRAMES_PER_SECOND;
     public static final double SECOND_DELAY = 1.0 / FRAMES_PER_SECOND;
     public static final Paint BACKGROUND = Color.AZURE;
@@ -40,7 +39,7 @@ public class Breakout extends Application{
     public static final int BRICK_ROWS = 20;
     public static final double BRICK_WIDTH = (1.0) * SIZE/ ((1.0)*BRICK_COLUMNS);
     public static final double BRICK_HEIGHT = (1.0) * SIZE/((1.0)*BRICK_ROWS);
-    public static final double BALL_SPEED = (1.0) * SIZE/2 ;
+    public static final double BALL_SPEED = (1.0) * SIZE /1.5;
 
     private static final double TOLERANCE = 0.9;
     private static final double SMALL_ANGLE = 20 * Math.PI / 180;
@@ -51,6 +50,9 @@ public class Breakout extends Application{
     private static final double BIGGER_ANGLE_Y = Math.sin(BIGGER_ANGLE) * BALL_SPEED;
     private static final double POWER_UP_CHANCE = 0.25;
     private static final long POWER_UP_DURATION = 15;
+    private static final int SCORE_PER_BRICK = 10;
+    private static final int MAX_LEVEL = 0;
+    private static final int TOUGH_HEALTH = 5;
 
 
     private static double bouncerSpeedX = 0;
@@ -59,19 +61,24 @@ public class Breakout extends Application{
     private static int myScore = 0;
     private static boolean started = false;
     private static int currentPower = 0;
+    private static int maxScore = 0;
+    private static int currentLevel;
+
 
     private Scene myScene;
     private ImageView myBouncer;
     private ImageView myPaddle;
     private Brick myBrick;
     private Group root;
+    private Stage myStage;
 
     /**
      * Initialize what will be displayed and how it will be updated.
      */
     @Override
     public void start (Stage stage) {
-        myScene = setupLevel(SIZE, SIZE, BACKGROUND);
+        myStage = stage;
+        myScene = setupLevel(BACKGROUND, 4);
         Group titleRoot;
         titleRoot = showStartScreen();
         Scene titleScene = new Scene(titleRoot, SIZE, SIZE);
@@ -112,7 +119,7 @@ public class Breakout extends Application{
     }
 
 
-    private Scene setupLevel(int width, int height, Paint background) {
+    private Scene setupLevel(Paint background, int levelNum) {
         // create one top level collection to organize the things in the scene
         root = new Group();
         // make some shapes and set their properties
@@ -127,23 +134,23 @@ public class Breakout extends Application{
 
         myBouncer.setFitHeight(image.getHeight());
         myBouncer.setFitWidth(image.getWidth());
-        myBouncer.setX(width/2);
+        myBouncer.setX(Breakout.SIZE /2.0);
 
         myPaddle.setFitHeight(paddleImage.getHeight());
         myPaddle.setFitWidth(paddleImage.getWidth());
-        myPaddle.setX(width / 2 - myPaddle.getBoundsInLocal().getWidth() / 2);
-        myPaddle.setY(height  - myPaddle.getBoundsInLocal().getHeight());
+        myPaddle.setX(Breakout.SIZE / 2.0 - myPaddle.getBoundsInLocal().getWidth() / 2);
+        myPaddle.setY(Breakout.SIZE - myPaddle.getBoundsInLocal().getHeight());
 
-        myBouncer.setY(height - myPaddle.getFitHeight() - myBouncer.getFitHeight());
+        myBouncer.setY(Breakout.SIZE - myPaddle.getFitHeight() - myBouncer.getFitHeight());
 
         root.getChildren().add(myBouncer);
         root.getChildren().add(myPaddle);
         //root.getChildren().add(myBrick);
 
-        root = addBricks(root);
+        root = addBricks(root,levelNum);
 
 
-        Scene scene = new Scene(root, width, height, background);
+        Scene scene = new Scene(root, Breakout.SIZE, Breakout.SIZE, background);
         // respond to input
 
         scene.setOnKeyPressed(e -> handleKeyInput(e.getCode()));
@@ -151,16 +158,47 @@ public class Breakout extends Application{
         return scene;
     }
 
-    private Group addBricks(Group root) {
-        for (int j =0; j <= 5; j ++) {
-            for (int i = 0; i <= BRICK_COLUMNS; i++) {
-                myBrick = new Brick(i * BRICK_WIDTH, j * BRICK_HEIGHT, BRICK_WIDTH, BRICK_HEIGHT);
-                myBrick.setHealth(1);
-                myBrick.setFill(Color.GRAY);
-                root.getChildren().add(myBrick);
+    private Group addBricks(Group root, int level) {
+        int type = 1;
+        int[][] brickType = readInBrickTypes(level);
+        for (int j = 0; j < BRICK_ROWS; j++) {
+            for (int i = 0; i < BRICK_COLUMNS; i++) {
+                type = brickType[j][i];
+                if (type > 0) {
+                    myBrick = new Brick(i * BRICK_WIDTH, j * BRICK_HEIGHT, BRICK_WIDTH, BRICK_HEIGHT);
+
+                    if (type == 1) {
+                        myBrick.setFill(Color.GRAY);
+                        maxScore += SCORE_PER_BRICK * type;
+                        myBrick.setHealth(1);
+                    }
+                    else if (type == 2){
+                        myBrick.setFill(Color.GOLD);
+                        maxScore += SCORE_PER_BRICK * TOUGH_HEALTH;
+                        myBrick.setHealth(TOUGH_HEALTH);
+                    }
+                    else {
+                        myBrick.setFill(Color.BLACK);
+                        myBrick.setHealth(Integer.MAX_VALUE);
+                    }
+
+                    root.getChildren().add(myBrick);
+                }
+
             }
         }
         return root;
+    }
+
+    private int[][] readInBrickTypes(int level){
+        int [] [] healthMat = new int[BRICK_ROWS][BRICK_COLUMNS];
+        String fileName = "lvl" + level + ".txt";
+
+        InputHandler input = new InputHandler(fileName, BRICK_ROWS, BRICK_COLUMNS);
+        healthMat = input.readInput();
+
+        return healthMat;
+
     }
 
     private void step(double elapsedTime, Scene curScene) {
@@ -173,8 +211,21 @@ public class Breakout extends Application{
             checkCollisions(curScene);
             if (currentPower == 0)
                 currentPower = checkNewPowerUp(curScene);
+            if (myScore > maxScore)
+                nextLevel(); //change level
+
         }
 
+    }
+
+    private void nextLevel() {
+        if (currentLevel < MAX_LEVEL){
+            myScene = setupLevel(BACKGROUND, currentLevel ++);
+            myStage.setScene(myScene);
+        }
+        else {
+            endGame(true);
+        }
     }
 
     public int checkNewPowerUp(Scene myScene) {
@@ -266,7 +317,7 @@ public class Breakout extends Application{
                             root.getChildren().add(myPowerUp);
                         }
                     }
-                    myScore += 10;
+                    myScore += SCORE_PER_BRICK;
                     break;
                 }
             }
@@ -303,12 +354,14 @@ public class Breakout extends Application{
         myLives--;
         started = false;
         if (myLives <= 0)
-            endGame();
+            endGame(false);
     }
 
-    private void endGame() {
+    private void endGame(boolean hasWon) {
+        String winner = "";
+        if (hasWon) winner = " You Won!";
         root.getChildren().clear();
-        Text endText = new Text(0, SIZE/4,"Game Over");
+        Text endText = new Text(0, SIZE/4,"Game Over" + winner);
         endText.setFill(Color.RED);
         endText.setFont(new Font(SIZE/10));
         alignCenter(endText);
