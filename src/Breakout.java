@@ -17,6 +17,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.sql.SQLOutput;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -51,7 +52,7 @@ public class Breakout extends Application{
     private static final double POWER_UP_CHANCE = 0.25;
     private static final long POWER_UP_DURATION = 15;
     private static final int SCORE_PER_BRICK = 10;
-    private static final int MAX_LEVEL = 0;
+    private static final int MAX_LEVEL = 5;
     private static final int TOUGH_HEALTH = 5;
 
 
@@ -62,7 +63,7 @@ public class Breakout extends Application{
     private static boolean started = false;
     private static int currentPower = 0;
     private static int maxScore = 0;
-    private static int currentLevel;
+    private static int currentLevel = 1;
 
 
     private Scene myScene;
@@ -78,7 +79,7 @@ public class Breakout extends Application{
     @Override
     public void start (Stage stage) {
         myStage = stage;
-        myScene = setupLevel(BACKGROUND, 4);
+        myScene = setupLevel(BACKGROUND, currentLevel);
         Group titleRoot;
         titleRoot = showStartScreen();
         Scene titleScene = new Scene(titleRoot, SIZE, SIZE);
@@ -193,7 +194,7 @@ public class Breakout extends Application{
     private int[][] readInBrickTypes(int level){
         int [] [] healthMat = new int[BRICK_ROWS][BRICK_COLUMNS];
         String fileName = "lvl" + level + ".txt";
-
+        //System.out.println(fileName);
         InputHandler input = new InputHandler(fileName, BRICK_ROWS, BRICK_COLUMNS);
         healthMat = input.readInput();
 
@@ -211,7 +212,7 @@ public class Breakout extends Application{
             checkCollisions(curScene);
             if (currentPower == 0)
                 currentPower = checkNewPowerUp(curScene);
-            if (myScore > maxScore)
+            if (myScore >= maxScore)
                 nextLevel(); //change level
 
         }
@@ -219,9 +220,17 @@ public class Breakout extends Application{
     }
 
     private void nextLevel() {
+        currentLevel++;
         if (currentLevel < MAX_LEVEL){
-            myScene = setupLevel(BACKGROUND, currentLevel ++);
+            myScene = setupLevel(BACKGROUND, currentLevel);
             myStage.setScene(myScene);
+            started = false;
+            bouncerSpeedY = 0;
+            bouncerSpeedX = 0;
+            //System.out.println("Next Level");
+        }
+        else if (currentLevel == MAX_LEVEL){
+            myPaddle.setVisible(false);
         }
         else {
             endGame(true);
@@ -317,6 +326,7 @@ public class Breakout extends Application{
                             root.getChildren().add(myPowerUp);
                         }
                     }
+                    if (((Brick) other).getHealth()<100)
                     myScore += SCORE_PER_BRICK;
                     break;
                 }
@@ -353,8 +363,12 @@ public class Breakout extends Application{
     private void death() {
         myLives--;
         started = false;
-        if (myLives <= 0)
+        if (myLives <= 0) {
+            if (currentLevel == MAX_LEVEL)
+                endGame(true);
+            else
             endGame(false);
+        }
     }
 
     private void endGame(boolean hasWon) {
@@ -390,10 +404,44 @@ public class Breakout extends Application{
                 myPaddle.setX(myPaddle.getX() - PADDLE_SPEED);
             }
         }
+        char codeChar = code.getChar().charAt(0);
+        if (codeChar > '0' && codeChar<'6'){
+            skipToLevel(Integer.parseInt("" + codeChar));
+        }
+        if(codeChar > '5' && codeChar < ':')
+            skipToLevel(MAX_LEVEL);
+        
+        if (code == KeyCode.L)
+            myLives ++; 
+        if (code == KeyCode.R)
+            resetToStartPosition();
+        if (code == KeyCode.DOLLAR)
+            myScore += 100; 
+    }
+
+    private void resetToStartPosition() {
+        myPaddle.setX(Breakout.SIZE / 2.0 - myPaddle.getBoundsInLocal().getWidth() / 2);
+        myPaddle.setY(Breakout.SIZE - myPaddle.getBoundsInLocal().getHeight());
+        myBouncer.setX(SIZE/2);
+        myBouncer.setY(Breakout.SIZE - myPaddle.getFitHeight() - myBouncer.getFitHeight());
+        bouncerSpeedX = 0;
+        bouncerSpeedY = 0;
+
+        started = false;
+    }
+
+
+    private void skipToLevel(int level){
+        myScene = setupLevel(BACKGROUND, level);
+        currentLevel = level;
+        myStage.setScene(myScene);
+        started = false;
+        bouncerSpeedY = 0;
+        bouncerSpeedX = 0;
     }
 
     private void handleMouseInput(double x, double y) {
-        if (!started) {
+        if (true ) { //!started ****
             double dy = y - myBouncer.getY();
             double dx = x - myBouncer.getX();
             double hyp = Math.sqrt(dx * dx + dy * dy);
