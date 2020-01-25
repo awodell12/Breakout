@@ -52,6 +52,8 @@ public class Breakout extends Application{
     public static final double BRICK_WIDTH = (1.0) * SIZE/ ((1.0)*BRICK_COLUMNS);
     public static final double BRICK_HEIGHT = (1.0) * SIZE/((1.0)*BRICK_ROWS);
     public static final double BALL_SPEED = (1.0) * SIZE /1.5;
+    public static final int TOUGH_HEALTH = 5;
+    public static final int SCORE_PER_BRICK = 10;
 
     private static final double TOLERANCE = 0.9;
     private static final double SMALL_ANGLE = 20 * Math.PI / 180;
@@ -62,9 +64,9 @@ public class Breakout extends Application{
     private static final double BIGGER_ANGLE_Y = Math.sin(BIGGER_ANGLE) * BALL_SPEED;
     private static final double POWER_UP_CHANCE = 0.1;
     private static final long POWER_UP_DURATION = 15;
-    private static final int SCORE_PER_BRICK = 10;
+
     private static final int MAX_LEVEL = 5;
-    private static final int TOUGH_HEALTH = 5;
+
     private static final int BOTTOM_DISPLAY_SIZE = 50 ;
 
 
@@ -162,9 +164,11 @@ public class Breakout extends Application{
 
         root.getChildren().add(myBouncer);
         root.getChildren().add(myPaddle);
-        //root.getChildren().add(myBrick);
 
-        root = addBricks(root,levelNum);
+        String fileName = "lvl" + levelNum + ".txt";
+        InputHandler input = new InputHandler(fileName, BRICK_ROWS, BRICK_COLUMNS);
+        root = input.addBricks(root);
+        maxScore += input.getNewScoreAdded();
         root.getChildren().add(setUpDisplay());
 
 
@@ -196,48 +200,6 @@ public class Breakout extends Application{
     return vbox;
     }
 
-    private Group addBricks(Group root, int level) {
-        int type = 1;
-        int[][] brickType = readInBrickTypes(level);
-        for (int j = 0; j < BRICK_ROWS; j++) {
-            for (int i = 0; i < BRICK_COLUMNS; i++) {
-                type = brickType[j][i];
-                if (type > 0) {
-                    myBrick = new Brick(i * BRICK_WIDTH, j * BRICK_HEIGHT, BRICK_WIDTH, BRICK_HEIGHT);
-
-                    if (type == 1) {
-                        myBrick.setFill(Color.GRAY);
-                        maxScore += SCORE_PER_BRICK * type;
-                        myBrick.setHealth(1);
-                    }
-                    else if (type == 2){
-                        myBrick.setFill(Color.GOLD);
-                        maxScore += SCORE_PER_BRICK * TOUGH_HEALTH;
-                        myBrick.setHealth(TOUGH_HEALTH);
-                    }
-                    else {
-                        myBrick.setFill(Color.BLACK);
-                        myBrick.setHealth(Integer.MAX_VALUE - 100);
-                    }
-
-                    root.getChildren().add(myBrick);
-                }
-
-            }
-        }
-        return root;
-    }
-
-    private int[][] readInBrickTypes(int level){
-        int [] [] healthMat = new int[BRICK_ROWS][BRICK_COLUMNS];
-        String fileName = "lvl" + level + ".txt";
-        //System.out.println(fileName);
-        InputHandler input = new InputHandler(fileName, BRICK_ROWS, BRICK_COLUMNS);
-        healthMat = input.readInput();
-
-        return healthMat;
-
-    }
 
     private void step(double elapsedTime, Scene curScene) {
         if (myScene == curScene) {
