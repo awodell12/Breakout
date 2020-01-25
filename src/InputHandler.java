@@ -13,10 +13,10 @@ import java.io.InputStream;
  */
 public class InputHandler {
 
-    String fileName;
-    int maxRows;
-    int maxCols;
-    int newScoreAdded;
+    private String fileName;
+    private int maxRows;
+    private int maxCols;
+    private int newScoreAdded;
 
     public InputHandler(String fName, int rows, int cols) {
         fileName = fName;
@@ -30,7 +30,7 @@ public class InputHandler {
      *
      * @return 2D integer array of brick types
      */
-    public int[][] readInput() {
+    private int[][] readInput() {
         int[][] healthMatrix = new int[maxRows][maxCols];
         int row = 0;
         int col = 0;
@@ -58,7 +58,8 @@ public class InputHandler {
     }
 
     /**
-     *
+     * @param root, is the Group that will be the root of the scene to be created for a new level
+     * @return the updated Group with all of the new Bricks
      */
     public Group addBricks(Group root) {
         newScoreAdded = 0;
