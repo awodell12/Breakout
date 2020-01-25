@@ -54,6 +54,14 @@ public class PowerUp extends Circle {
         }
     }
 
+
+    /**
+     * This method checks to see if there are any power-ups that hit the paddle and if so it will send back which power-up
+     * type has hit it
+     * @param myScene current scene representing the level
+     * @param myPaddle Paddle object
+     * @return the int that represents the power-up type of the power up grabbed by the paddle
+     */
     public static int checkNewPowerUp(Scene myScene, ImageView myPaddle) {
         int powerType = 0;
         for (Node other :myScene.getRoot().getChildrenUnmodifiable()){
