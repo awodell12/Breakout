@@ -67,7 +67,7 @@ public class Breakout extends Application{
 
     private static final int MAX_LEVEL = 5;
 
-    private static final int BOTTOM_DISPLAY_SIZE = 50 ;
+    public static final int BOTTOM_DISPLAY_SIZE = 50 ;
 
 
     private static double bouncerSpeedX = 0;
@@ -83,7 +83,6 @@ public class Breakout extends Application{
     private Scene myScene;
     private ImageView myBouncer;
     private ImageView myPaddle;
-    private Brick myBrick;
     private Group root;
     private Stage myStage;
     private Label myScoreDisplay;
@@ -146,8 +145,6 @@ public class Breakout extends Application{
         Image paddleImage = new Image(this.getClass().getClassLoader().getResourceAsStream(PADDLE_IMAGE));
         myBouncer = new ImageView(image);
         myPaddle = new ImageView(paddleImage);
-        myBrick = new Brick(0, 0, SIZE/BRICK_COLUMNS,SIZE/BRICK_ROWS);
-        myBrick.setFill(Color.GRAY);
 
         // x and y represent the top left corner, so center it in window
 
@@ -204,18 +201,44 @@ public class Breakout extends Application{
     private void step(double elapsedTime, Scene curScene) {
         if (myScene == curScene) {
             updateBouncer(elapsedTime);
-            updatePowerUps(elapsedTime);
+            PowerUp.updatePowerUps(root, elapsedTime);
 
             if (myPaddle.getBoundsInParent().intersects(myBouncer.getBoundsInParent())) ballHitsPaddle();
 
             checkCollisions(curScene);
-            if (currentPower == 0)
-                currentPower = checkNewPowerUp(curScene);
+            if (currentPower == 0) {
+                currentPower = PowerUp.checkNewPowerUp(curScene, myPaddle);
+                activatePowerUp();
+            }
             if (myScore >= maxScore)
                 nextLevel(); //change level
 
         }
 
+    }
+
+    private void activatePowerUp() {
+        switch (currentPower){
+            case 1:
+                addLife();
+                break;
+            case 2:
+                slowBall();
+                break;
+            case 3:
+                growPaddle();
+                break;
+            case 4:
+                System.out.println("Power-Up 4"); // Could add 4th power-up here
+                break;
+
+            case 5:
+                System.out.println("Power-Up 5"); //could add 5th power-up here
+                break;
+        }
+        Timer timer = new Timer();
+        TimerTask task = new removePowerUp(currentPower);
+        timer.schedule(task, POWER_UP_DURATION * 1000 );
     }
 
     private void nextLevel() {
@@ -236,67 +259,22 @@ public class Breakout extends Application{
         }
     }
 
-    public int checkNewPowerUp(Scene myScene) {
-        int powerType = 0;
-        for (Node other :myScene.getRoot().getChildrenUnmodifiable()){
-            if(other instanceof PowerUp){
-                if(myPaddle.getBoundsInParent().intersects(other.getBoundsInParent()) && other.isVisible()) {
-                    powerType = ((PowerUp) other).getPowerType();
-                    switch (powerType){
-                        case 1:
-                            addLife();
-                            break;
-                        case 2:
-                            slowBall();
-                            break;
-                        case 3:
-                            growPaddle();
-                            break;
-                        case 4:
-                            System.out.println("Power-Up 4"); // Could add 4th power-up here
-                            break;
 
-                        case 5:
-                            System.out.println("Power-Up 5"); //could add 5th power-up here
-                            break;
-                    }
-                    other.setVisible(false);
-                    Timer timer = new Timer();
-                    TimerTask task = new removePowerUp(powerType);
-                    timer.schedule(task, POWER_UP_DURATION * 1000 );
-                    break;
-                }
-            }
-        }
-
-        return powerType;
-    }
-
-    private void growPaddle() {
+    public void growPaddle() {
         myPaddle.setFitWidth(myPaddle.getFitWidth()*2);
     }
 
-    private void slowBall() {
+    public void slowBall() {
         bouncerSpeedX = 0.5 * bouncerSpeedX;
         bouncerSpeedY = 0.5 * bouncerSpeedY;
     }
 
-    private void addLife() {
+    public  void addLife() {
         myLives++;
         myLivesDisplay.setText("Lives: " + myLives);
     }
 
-    private void updatePowerUps(double elapsedTime) {
-        for (Node node: root.getChildrenUnmodifiable()) {
-            if (node instanceof PowerUp) {
-                double newY = (node.getLayoutY() + ((PowerUp) node).getVelocity() * elapsedTime);
-                node.setLayoutY(newY);
-                if (node.getLayoutY() >= SIZE + BOTTOM_DISPLAY_SIZE) {
-                    node.setVisible(false);
-                }
-            }
-            }
-        }
+
 
     private void updateBouncer(double elapsedTime) {
         myBouncer.setX(myBouncer.getX() + bouncerSpeedX * elapsedTime);
